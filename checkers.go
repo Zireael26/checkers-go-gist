@@ -353,27 +353,48 @@ func Parse(s string) (*Game, error) {
 }
 
 func (g *Game) SaveBoard() {
+	var gameListSaveFile *os.File
+	_, err := os.Stat("./store/game-list.txt")
+	if os.IsNotExist(err) {
+		gameListSaveFile, err = os.Create("./store/game-list.txt")
+		if err != nil {
+			log.Fatal("Unable to create game-list file because an error occurred: ", err)
+		}
+	} else {
+		gameListSaveFile, err = os.Open("./store/game-list.txt")
+		if err != nil {
+			log.Fatal("Unable to open game-list file because an error occurred: ", err)
+		}
+	}
+	defer gameListSaveFile.Close()
+
 	serializedGame := g.String()
-	filepath := "./store/board/" + time.UTC.String() + "/"
+	directoryName := time.UTC.String()
+	filepath := "./store/board/" + directoryName + "/"
 	boardSaveFile, err := os.Create(filepath + "board.json")
 	if err != nil {
 		log.Fatal("Unable to create savefile for the board because an error occurred: ", err)
 	}
+	defer boardSaveFile.Close()
+
 	turnSaveFile, err := os.Create(filepath + "turn.json")
 	if err != nil {
 		log.Fatal("Unable to create savefile for the turn because an error occurred: ", err)
 	}
-
-	defer boardSaveFile.Close()
 	defer turnSaveFile.Close()
 
 	_, writeErr := boardSaveFile.WriteString(serializedGame)
 	if writeErr != nil {
-		log.Fatal("Unable to write to savefile because an error occurred: ", writeErr)
+		log.Fatal("Unable to write to board savefile because an error occurred: ", writeErr)
 	}
 
 	_, writeErr = turnSaveFile.WriteString(g.Turn.Color)
 	if writeErr != nil {
-		log.Fatal("Unable to write to savefile because an error occurred: ", writeErr)
+		log.Fatal("Unable to write to turn savefile because an error occurred: ", writeErr)
+	}
+
+	_, writeErr = gameListSaveFile.WriteString(directoryName)
+	if writeErr != nil {
+		log.Fatal("Unable to write to game-list file because an error occurred: ", writeErr)
 	}
 }
